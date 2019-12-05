@@ -3,7 +3,7 @@
 require_once 'vendor/autoload.php';
 
 $app = new \Slim\Slim();
-$db = new mysqli ('localhost','root','root','cuej');
+$db = new mysqli ('localhost','root','root','sicuej');
 
 //ESCUELA 
 $app->get('/escuela', function () use ($app, $db)
@@ -12,15 +12,15 @@ $app->get('/escuela', function () use ($app, $db)
   avg(d.respuesta) promedio,
   (6 - avg(d.respuesta)) *100/5 calificacion,
   -- IF(d.respuesta = 1, p.opcion_1, IF(d.respuesta = 2, p.opcion_2, IF(d.respuesta = 3, p.opcion_3, '') ) ) respuesta
-count(*)
-from evaluaciones_docentes d
-join evaluaciones_preguntas p on d.id_evaluacion_pregunta = p.id_evaluacion_pregunta
-join horarios h on d.id_horario = h.id_horario
-where 1=1
-and d.id_evaluacion_pregunta = 1
--- and h.id_profesor = 44
--- and h.id_materia in (61,  155)
-order by count(*) desc, calificacion desc;";
+  count(*)
+  from evaluaciones_docentes d
+  join evaluaciones_preguntas p on d.id_evaluacion_pregunta = p.id_evaluacion_pregunta
+  join horarios h on d.id_horario = h.id_horario
+  where 1=1
+  -- and d.id_evaluacion_pregunta = 1
+  -- and h.id_profesor = 44
+  -- and h.id_materia in (61,  155)
+  order by count(*) desc, calificacion desc;";
   $query = $db->query($sql);
   //$result = array();
   $usuarios= array();
@@ -38,16 +38,20 @@ order by count(*) desc, calificacion desc;";
   echo json_encode($result);
 });
 
+
+
+
+
 //CARRERA
 
 $app->get('/carreras', function () use ($app, $db)
 {
-  $sql = "select  c.id_carrera
+  $sql = " select  carrera
   carrera,
          avg(d.respuesta) promedio,
          (6 - avg(d.respuesta)) *100/5 calificacion,
          -- IF(d.respuesta = 1, p.opcion_1, IF(d.respuesta = 2, p.opcion_2, IF(d.respuesta = 3, p.opcion_3, '') ) ) respuesta
-   count(*)
+   count(*)/22
   from evaluaciones_docentes d
       join evaluaciones_preguntas p on d.id_evaluacion_pregunta = p.id_evaluacion_pregunta
       join horarios h on d.id_horario = h.id_horario
@@ -56,7 +60,7 @@ $app->get('/carreras', function () use ($app, $db)
       join planes_estudio pe on g.id_plan_estudio = pe.id_plan_estudio
   join carreras c on pe.id_carrera = c.id_carrera
   where 1=1
-  and d.id_evaluacion_pregunta = 1
+  -- and d.id_evaluacion_pregunta = 1
   -- and h.id_profesor = 44
   -- and h.id_materia in (61,  155)
   group by carrera, c.id_carrera
@@ -79,6 +83,89 @@ $app->get('/carreras', function () use ($app, $db)
 });
 
 
+//Evaluacion_Docente_Mostrar_Tabla_Carrera_Individual
+
+$app->get('/carreras/:idCarrera', function ($idCarrera) use ($app, $db)
+{
+  $sql = "select  carrera
+  carrera,
+         avg(d.respuesta) promedio,
+         (6 - avg(d.respuesta)) *100/5 calificacion,
+         -- IF(d.respuesta = 1, p.opcion_1, IF(d.respuesta = 2, p.opcion_2, IF(d.respuesta = 3, p.opcion_3, '') ) ) respuesta
+   count(*)/22
+  from evaluaciones_docentes d
+      join evaluaciones_preguntas p on d.id_evaluacion_pregunta = p.id_evaluacion_pregunta
+      join horarios h on d.id_horario = h.id_horario
+      join grupos g on h.id_grupo = g.id_grupo
+      join materias m on h.id_materia = m.id_materia
+      join planes_estudio pe on g.id_plan_estudio = pe.id_plan_estudio
+  join carreras c on pe.id_carrera = c.id_carrera
+  where 1=1
+   -- and d.id_evaluacion_pregunta = 1
+  and c.id_carrera =".$idCarrera."  -- and h.id_profesor = 44
+  -- and h.id_materia in (61,  155)
+  group by carrera, c.id_carrera
+  order by count(*) desc, calificacion desc;";
+  $query = $db->query($sql);
+  //$result = array();
+  $result = array(
+    'status' => 'error',
+    'code' => 404,
+    'data' => 'No se encontro el producto'
+  );
+  if ($query->num_rows == 1){
+      $carrera = $query->fetch_assoc();
+      $result = array
+    (
+      'status' => 'success',
+      'code' => 200,
+      'data' => $carrera
+    );
+  }
+  echo json_encode($result);
+});
+
+// Evaluacion_Docente_Mostrar_Tabla_Carrera_Materia_Individual 
+
+
+$app->get('/carreras/:idCarrera/:idMateria', function ($idCarrera,$idMateria) use ($app, $db)
+{
+  $sql = "select  carrera
+  carrera,
+         avg(d.respuesta) promedio,
+         (6 - avg(d.respuesta)) *100/5 calificacion,
+         -- IF(d.respuesta = 1, p.opcion_1, IF(d.respuesta = 2, p.opcion_2, IF(d.respuesta = 3, p.opcion_3, '') ) ) respuesta
+   count(*)/22
+  from evaluaciones_docentes d
+      join evaluaciones_preguntas p on d.id_evaluacion_pregunta = p.id_evaluacion_pregunta
+      join horarios h on d.id_horario = h.id_horario
+      join grupos g on h.id_grupo = g.id_grupo
+      join materias m on h.id_materia = m.id_materia
+      join planes_estudio pe on g.id_plan_estudio = pe.id_plan_estudio
+  join carreras c on pe.id_carrera = c.id_carrera
+  where 1=1
+   -- and d.id_evaluacion_pregunta = 1
+  and c.id_carrera =".$idCarrera."  -- and h.id_profesor = 44
+  -- and h.id_materia= ".$idCarrera."
+  group by carrera, c.id_carrera
+  order by count(*) desc, calificacion desc;";
+  $query = $db->query($sql);
+  //$result = array();
+  $usuarios= array();
+  //var_dump($query -> fetch_all());
+  while ($usuario = $query-> fetch_assoc())
+  {
+    $usuarios[] = $usuario;
+  }
+  $result = array
+  (
+    'status' => 'success',
+    'code' => 200,
+    'data' => $usuarios
+  );
+  echo json_encode($result);
+});
+
 //MATERIA
 
 $app->get('/materias', function () use ($app, $db)
@@ -97,7 +184,7 @@ $app->get('/materias', function () use ($app, $db)
   join planes_estudio pe on g.id_plan_estudio = pe.id_plan_estudio
   join carreras c on pe.id_carrera = c.id_carrera
   where 1=1
-  and d.id_evaluacion_pregunta = 1
+  -- and d.id_evaluacion_pregunta = 1
   -- and h.id_profesor = 44
   -- and h.id_materia in (61,  155)
   and c.id_carrera =1
@@ -137,7 +224,7 @@ join horarios h on d.id_horario = h.id_horario
 join profesores p2 on h.id_profesor = p2.id_profesor
 join materias m on h.id_materia = m.id_materia
 where 1=1
-and d.id_evaluacion_pregunta = 1
+-- and d.id_evaluacion_pregunta = 1
 -- and h.id_profesor = 44
 -- and h.id_materia in (61,  155)
 group by m.materia, p2.nombre,  p2.apellido_paterno,  p2.apellido_materno
