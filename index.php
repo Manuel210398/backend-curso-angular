@@ -130,24 +130,72 @@ $app->get('/carreras/:idCarrera', function ($idCarrera) use ($app, $db)
 
 $app->get('/carreras/:idCarrera/:idMateria', function ($idCarrera,$idMateria) use ($app, $db)
 {
-  $sql = "select  carrera
-  carrera,
+  $sql = " select  carrera
+  carrera, 
          avg(d.respuesta) promedio,
-         (6 - avg(d.respuesta)) *100/5 calificacion,
+         (6 - avg(d.respuesta)) *100/5 calificacion, m.materia,
          -- IF(d.respuesta = 1, p.opcion_1, IF(d.respuesta = 2, p.opcion_2, IF(d.respuesta = 3, p.opcion_3, '') ) ) respuesta
-   count(*)/22
+   count(*),  p2.nombre,  p2.apellido_paterno,  p2.apellido_materno
+   
   from evaluaciones_docentes d
       join evaluaciones_preguntas p on d.id_evaluacion_pregunta = p.id_evaluacion_pregunta
       join horarios h on d.id_horario = h.id_horario
       join grupos g on h.id_grupo = g.id_grupo
       join materias m on h.id_materia = m.id_materia
+      join profesores p2 on h.id_profesor = p2.id_profesor
       join planes_estudio pe on g.id_plan_estudio = pe.id_plan_estudio
   join carreras c on pe.id_carrera = c.id_carrera
   where 1=1
-   -- and d.id_evaluacion_pregunta = 1
-  and c.id_carrera =".$idCarrera."  -- and h.id_profesor = 44
-  -- and h.id_materia= ".$idCarrera."
-  group by carrera, c.id_carrera
+  -- and d.id_evaluacion_pregunta = 1
+    and c.id_carrera = ".$idCarrera."
+  -- and h.id_profesor = 44
+   and m.id_materia = ".$idMateria."
+  group by carrera, c.id_carrera, m.materia, p2.nombre,  p2.apellido_paterno,  p2.apellido_materno
+  order by count(*) desc, calificacion desc;";
+  $query = $db->query($sql);
+  //$result = array();
+  $usuarios= array();
+  //var_dump($query -> fetch_all());
+  while ($usuario = $query-> fetch_assoc())
+  {
+    $usuarios[] = $usuario;
+  }
+  $result = array
+  (
+    'status' => 'success',
+    'code' => 200,
+    'data' => $usuarios
+  );
+  echo json_encode($result);
+});
+
+
+//Evaluacion_Docente_Mostrar_Grafica_Carrera_Materia_Docente_Individual
+
+
+$app->get('/carreras/:idCarrera/:idMateria/:idProfesor', function ($idCarrera,$idMateria,$idProfesor) use ($app, $db)
+{
+  $sql = " select  carrera
+  carrera, 
+         avg(d.respuesta) promedio,
+         (6 - avg(d.respuesta)) *100/5 calificacion, m.materia,
+         -- IF(d.respuesta = 1, p.opcion_1, IF(d.respuesta = 2, p.opcion_2, IF(d.respuesta = 3, p.opcion_3, '') ) ) respuesta
+   count(*)/22,  p2.nombre,  p2.apellido_paterno,  p2.apellido_materno
+   
+  from evaluaciones_docentes d
+      join evaluaciones_preguntas p on d.id_evaluacion_pregunta = p.id_evaluacion_pregunta
+      join horarios h on d.id_horario = h.id_horario
+      join grupos g on h.id_grupo = g.id_grupo
+      join materias m on h.id_materia = m.id_materia
+      join profesores p2 on h.id_profesor = p2.id_profesor
+      join planes_estudio pe on g.id_plan_estudio = pe.id_plan_estudio
+  join carreras c on pe.id_carrera = c.id_carrera
+  where 1=1
+  -- and d.id_evaluacion_pregunta = 1
+    and c.id_carrera = ".$idCarrera."
+ and h.id_profesor = ".$idProfesor."
+   and m.id_materia = ".$idMateria."
+  group by carrera, c.id_carrera, m.materia, p2.nombre,  p2.apellido_paterno,  p2.apellido_materno
   order by count(*) desc, calificacion desc;";
   $query = $db->query($sql);
   //$result = array();
